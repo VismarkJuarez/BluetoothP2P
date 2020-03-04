@@ -26,7 +26,7 @@ import java.util.UUID;
 
 public class MainActivity extends AppCompatActivity {
 
-    Button bluetoothOnButton, bluetoothOffButton, discoverDevicesButton, listenforNewMessagesButton;
+    Button bluetoothOnButton, bluetoothOffButton, enableBuetoothDiscoverabilityButton, discoverDevicesButton, listenforNewMessagesButton;
     BluetoothAdapter myBluetoothAdapter;
     Intent btEnablingIntent;
     int requestCodeForEnable;
@@ -48,10 +48,11 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        bluetoothOnButton = findViewById(R.id.bluetoothOn);
-        bluetoothOffButton = findViewById(R.id.bluetoothOff);
-        discoverDevicesButton = findViewById(R.id.discoverDevicesButton);
-        listenforNewMessagesButton = findViewById(R.id.listenForNewMessages);
+        bluetoothOnButton = (Button)findViewById(R.id.bluetoothOn);
+        bluetoothOffButton = (Button)findViewById(R.id.bluetoothOff);
+        discoverDevicesButton = (Button)findViewById(R.id.discoverDevicesButton);
+        enableBuetoothDiscoverabilityButton = (Button)findViewById(R.id.enableBluetoothDiscoverability);
+        listenforNewMessagesButton = (Button)findViewById(R.id.listenForNewMessages);
         myBluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
         btEnablingIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
         requestCodeForEnable = 1; //any request code > 0 is fine (can also be replaced by `REQUEST_ENABLE_BLUETOOTH`
@@ -117,6 +118,16 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
+        enableBuetoothDiscoverabilityButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Intent intent = new Intent(BluetoothAdapter.ACTION_REQUEST_DISCOVERABLE);
+                intent.putExtra(BluetoothAdapter.EXTRA_DISCOVERABLE_DURATION, 200);
+                startActivity(intent);
+            }
+        });
+
+
         //setting up onClick logic for the listView. This will be triggered
         //when an item in the listview gets clicked on:
         listView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
@@ -127,7 +138,6 @@ public class MainActivity extends AppCompatActivity {
                 Toast.makeText(getApplicationContext(), "Connecting...", Toast.LENGTH_SHORT).show();
             }
         });
-
 
     }
 

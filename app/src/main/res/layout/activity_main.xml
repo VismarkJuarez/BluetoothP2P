@@ -26,24 +26,27 @@
         android:text="Buetooth Off"/>
 
     <Button
+        android:id="@+id/enableBluetoothDiscoverability"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Enable Bluetooth Discoverability"/>
+
+    <Button
         android:id="@+id/discoverDevicesButton"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="Discover Devices"/>
 
-        <Button
-            android:id="@+id/listenForNewMessages"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Listen for new messages"/>
-
-
+    <Button
+        android:id="@+id/listenForNewMessages"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Listen for new messages"/>
 
         <ListView
             android:id="@+id/listView"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"/>
-
     </LinearLayout>
 
 </androidx.constraintlayout.widget.ConstraintLayout>
