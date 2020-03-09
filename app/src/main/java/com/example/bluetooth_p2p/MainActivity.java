@@ -16,24 +16,32 @@ import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
+import android.widget.EditText;
 import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.util.Set;
 import java.util.UUID;
 
 public class MainActivity extends AppCompatActivity {
 
     Button bluetoothOnButton, bluetoothOffButton, enableBuetoothDiscoverabilityButton, discoverDevicesButton, listenforNewMessagesButton;
+    Button send;
+    TextView msg_box;
+    EditText writeMsg;
     BluetoothAdapter myBluetoothAdapter;
     Intent btEnablingIntent;
     int requestCodeForEnable;
 
     ListView listView;
-
     BluetoothDevice[] btArray;
+
+    SendReceive sendReceive;
+
     static final int STATE_LISTENING = 1;
     static final int STATE_CONNECTING = 2;
     static final int STATE_CONNECTED = 3;
@@ -43,6 +51,8 @@ public class MainActivity extends AppCompatActivity {
 
     private static final String APP_NAME = "BTChat";
     private static final UUID MY_UUID = UUID.fromString("0704bf52-0931-4a15-aaff-e662f6632d7d");
+
+    BluetoothAdapter bluetoothAdapter;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -57,6 +67,10 @@ public class MainActivity extends AppCompatActivity {
         btEnablingIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
         requestCodeForEnable = 1; //any request code > 0 is fine (can also be replaced by `REQUEST_ENABLE_BLUETOOTH`
         listView = (ListView)findViewById(R.id.listView);
+
+        send = (Button)findViewById(R.id.sendButton);
+        msg_box = (TextView)findViewById(R.id.messageBoxTextView);
+        writeMsg = (EditText)findViewById(R.id.writeMsgEditText);
 
         setupOnClickListeners();
     }
@@ -139,6 +153,14 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
+        send.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                String string = String.valueOf(writeMsg.getText());
+                sendReceive.write(string.getBytes());
+            }
+        });
+
     }
 
 
@@ -159,7 +181,10 @@ public class MainActivity extends AppCompatActivity {
                     Toast.makeText(getApplicationContext(), "Connection Failed.", Toast.LENGTH_SHORT).show();
                     break;
                 case STATE_MESSAGE_RECEIVED:
-                    //To be written
+                    //Consume the received message and display it on the screen
+                    byte[] readBuffer = (byte[])msg.obj;
+                    String tempMsg = new String(readBuffer, 0, msg.arg1);
+                    msg_box.setText(tempMsg);
                     break;
             }
             return true;
@@ -214,7 +239,8 @@ public class MainActivity extends AppCompatActivity {
                     handler.sendMessage(message);
 
                     //send and receive logic:
-
+                    sendReceive = new SendReceive(socket);
+                    sendReceive.start();
                     break;
                 }
             }
@@ -241,11 +267,59 @@ public class MainActivity extends AppCompatActivity {
                 Message message = Message.obtain();
                 message.what = STATE_CONNECTED;
                 handler.sendMessage(message);
+
+                sendReceive = new SendReceive(socket);
+                sendReceive.start();
             } catch (IOException e) {
                 e.printStackTrace();
                 Message message = Message.obtain();
                 message.what = STATE_CONNECTION_FAILED;
                 handler.sendMessage(message);
+            }
+        }
+    }
+
+    private class SendReceive extends Thread {
+        private final BluetoothSocket bluetoothSocket;
+        private final InputStream inputStream;
+        private final OutputStream outputStream;
+
+        public SendReceive(BluetoothSocket socket) {
+            bluetoothSocket = socket;
+            InputStream tempIn = null;
+            OutputStream tempOut = null;
+
+            try {
+                tempIn = bluetoothSocket.getInputStream();
+                tempOut = bluetoothSocket.getOutputStream();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+
+            inputStream = tempIn;
+            outputStream = tempOut;
+        }
+
+        public void run() {
+            byte[] buffer = new byte[1024];
+            int bytes;
+
+            //always listen for a new message
+            while(true) {
+                try {
+                    bytes = inputStream.read(buffer);
+                    handler.obtainMessage(STATE_MESSAGE_RECEIVED, bytes, -1, buffer).sendToTarget();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+
+        public void write(byte[] bytes) {
+            try {
+                outputStream.write(bytes);
+            } catch (IOException e) {
+                e.printStackTrace();
             }
         }
 
